@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            min-height: 100vh;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px 25px;
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .month-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .month-nav h1 {
+            font-size: 28px;
+            min-width: 250px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .nav-btn {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #3a3a3a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .nav-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr 300px;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .habits-list-panel {
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .habits-list-panel h3 {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .habit-row-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 8px;
+            border-bottom: 1px solid #1e1e1e;
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .habit-row-label .icon {
+            font-size: 18px;
+            margin-right: 6px;
+        }
+
+        .habit-row-label .name {
+            flex: 1;
+        }
+
+        .delete-habit-btn {
+            background: transparent;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .delete-habit-btn:hover {
+            color: #e94560;
+            background: #1e1e1e;
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .wave-box {
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 15px;
+            height: 400px;
+            /* было 350px, стало 400px */
+        }
+
+        .wave-box h3 {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .period-btn {
+            flex: 1;
+            min-width: 60px;
+            background: #1e1e1e;
+            color: #888;
+            border: 1px solid #2a2a2a;
+            padding: 8px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .period-btn.active {
+            background: #1a3a6e;
+            color: #fff;
+            border-color: #2a5aaa;
+        }
+
+        .table-box {
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 15px;
+            flex: 1;
+            overflow: auto;
+        }
+
+        .table-box h3 {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 4px 2px;
+            text-align: center;
+            border: 1px solid #1e1e1e;
+        }
+
+        th {
+            background: #1a1a1a;
+            color: #888;
+            font-weight: normal;
+            font-size: 11px;
+        }
+
+        th.day-name {
+            color: #2a5aaa;
+        }
+
+        th.weekend {
+            color: #e94560;
+        }
+
+        th.date-num {
+            color: #ccc;
+            font-size: 13px;
+        }
+
+        td.habit-name {
+            text-align: left;
+            padding-left: 10px;
+            font-size: 14px;
+            color: #ddd;
+            white-space: nowrap;
+            background: #141414;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            min-width: 120px;
+        }
+
+        td.check-cell {
+            cursor: pointer;
+            font-size: 18px;
+            user-select: none;
+            color: #333;
+            min-width: 30px;
+            width: 30px;
+        }
+
+        td.check-cell:hover {
+            background: #1e1e1e;
+        }
+
+        td.check-cell.done {
+            color: #2a5aaa;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .goals-panel {
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 15px;
+        }
+
+        .goals-panel h3 {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .goal-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .goal-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .goal-item-name {
+            font-size: 13px;
+            color: #ddd;
+            flex: 1;
+        }
+
+        .goal-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 6px;
+        }
+
+        .goal-status.active {
+            background: #1a3a6e;
+            color: #fff;
+        }
+
+        .goal-status.done {
+            background: #1a6e3a;
+            color: #fff;
+        }
+
+        .goal-item-details {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .goal-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #1e1e1e;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .goal-progress-fill {
+            height: 100%;
+            background: #2a5aaa;
+            border-radius: 3px;
+            transition: width 0.4s;
+        }
+
+        .goal-delete-btn {
+            background: transparent;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .goal-delete-btn:hover {
+            color: #e94560;
+        }
+
+        .circle-panel {
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 15px;
+        }
+
+        .circle-panel h3 {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .circle-chart {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .circle-legend {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #ddd;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .add-btn {
+            background: #1e1e1e;
+            color: #2a5aaa;
+            border: 1px solid #2a5aaa;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .add-btn:hover {
+            background: #1a3a6e;
+            color: #fff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 25px;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .modal-content h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            background: #1e1e1e;
+            color: #fff;
+            border: 1px solid #2a2a2a;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-cancel {
+            background: #2a2a2a;
+            color: #fff;
+        }
+
+        .btn-confirm {
+            background: #2a5aaa;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #e94560;
+            color: #fff;
+        }
+
+        @media (max-width: 1100px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="month-nav">
+                <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+                <h1 id="monthTitle">Октябрь 2026</h1>
+                <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+            </div>
+            <div style="font-size: 12px; color: #666;">Life Tracker</div>
+        </div>
+
+        <div class="main-layout">
+            <div class="habits-list-panel">
+                <h3>Привычки</h3>
+                <div id="habitsLabels"></div>
+                <button class="add-btn" onclick="openAddHabitModal()">+ Добавить привычку</button>
+                <button class="add-btn" onclick="openAddGoalModal()">+ Добавить цель</button>
+            </div>
+
+            <div class="center-panel">
+                <div class="wave-box">
+                    <h3>Активность</h3>
+                    <div class="period-selector">
+                        <button class="period-btn active" onclick="setWavePeriod('month')">Месяц</button>
+                        <button class="period-btn" onclick="setWavePeriod('year')">Год</button>
+                    </div>
+                    <canvas id="waveChart"></canvas>
+                </div>
+                <div class="table-box">
+                    <h3>Трекер</h3>
+                    <div style="overflow-x: auto;">
+                        <table id="habitsTable">
+                            <thead id="habitsHead"></thead>
+                            <tbody id="habitsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="goals-panel">
+                    <h3>Мои цели</h3>
+                    <div id="goalsList"></div>
+                </div>
+
+                <div class="circle-panel">
+                    <h3>Прогресс по целям</h3>
+                    <div class="circle-chart"><canvas id="mainCircle"></canvas></div>
+                    <div class="circle-legend" id="circleLegend"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="addHabitModal">
+        <div class="modal-content">
+            <h2>Новая привычка</h2>
+            <label>Название:</label>
+            <input type="text" id="newHabitName" placeholder="Например: Чтение">
+            <label>Иконка (эмодзи):</label>
+            <input type="text" id="newHabitIcon" placeholder="Например: 📚" maxlength="2">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('addHabitModal')">Отмена</button>
+                <button class="btn-confirm" onclick="confirmAddHabit()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="addGoalModal">
+        <div class="modal-content">
+            <h2>Новая цель</h2>
+            <label>Название цели:</label>
+            <input type="text" id="newGoalName" placeholder="Например: Прочитать 3 книги">
+            <label>Привязать к привычке:</label>
+            <select id="newGoalHabit"></select>
+            <label>Период:</label>
+            <select id="newGoalPeriod">
+                <option value="day">День</option>
+                <option value="week">Неделя</option>
+                <option value="month" selected>Месяц</option>
+                <option value="year">Год</option>
+            </select>
+            <label>Цель (количество отметок):</label>
+            <input type="number" id="newGoalTarget" placeholder="Например: 30" value="30">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('addGoalModal')">Отмена</button>
+                <button class="btn-confirm" onclick="confirmAddGoal()">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="deleteConfirmModal">
+        <div class="modal-content">
+            <h2>Подтверждение удаления</h2>
+            <p style="color: #ddd; margin-bottom: 15px;">Вы уверены что хотите удалить?</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('deleteConfirmModal')">Отмена</button>
+                <button class="btn-danger" onclick="confirmDelete()">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const COLORS = ['#2a5aaa', '#e94560', '#4ade80', '#fbbf24', '#a855f7', '#06b6d4', '#f97316', '#ec4899'];
+
+        let currentDate = new Date();
+        let wavePeriod = 'month';
+        let data = loadData();
+        let pendingDelete = null;
+        let mainCircleChart, waveChartInstance;
+
+        function loadData() {
+            const saved = localStorage.getItem('lifeTrackerV8');
+            if (saved) return JSON.parse(saved);
+            return {
+                habits: [
+                    { id: 1, name: 'Зал', icon: '💪' },
+                    { id: 2, name: 'Чтение', icon: '📚' },
+                    { id: 3, name: 'Английский', icon: '🇬' }
+                ],
+                habitLogs: {},
+                goals: []
+            };
+        }
+
+        function saveData() { localStorage.setItem('lifeTrackerV8', JSON.stringify(data)); }
+        function getMonthKey() { return `${currentDate.getFullYear()}-${currentDate.getMonth()}`; }
+        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); updateAll(); }
+
+        function setWavePeriod(period) {
+            wavePeriod = period;
+            document.querySelectorAll('.wave-box .period-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderWave();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function openAddHabitModal() {
+            document.getElementById('newHabitName').value = '';
+            document.getElementById('newHabitIcon').value = '';
+            openModal('addHabitModal');
+        }
+
+        function confirmAddHabit() {
+            const name = document.getElementById('newHabitName').value.trim();
+            const icon = document.getElementById('newHabitIcon').value.trim() || '🎯';
+            if (!name) { alert('Введите название!'); return; }
+            data.habits.push({ id: Date.now(), name, icon });
+            saveData();
+            closeModal('addHabitModal');
+            updateAll();
+        }
+
+        function openAddGoalModal() {
+            if (data.habits.length === 0) { alert('Сначала добавьте привычку!'); return; }
+            const select = document.getElementById('newGoalHabit');
+            select.innerHTML = data.habits.map(h => `<option value="${h.id}">${h.icon} ${h.name}</option>`).join('');
+            document.getElementById('newGoalName').value = '';
+            document.getElementById('newGoalTarget').value = '30';
+            openModal('addGoalModal');
+        }
+
+        function confirmAddGoal() {
+            const name = document.getElementById('newGoalName').value.trim();
+            const habitId = parseInt(document.getElementById('newGoalHabit').value);
+            const period = document.getElementById('newGoalPeriod').value;
+            const target = parseInt(document.getElementById('newGoalTarget').value);
+            if (!name) { alert('Введите название цели!'); return; }
+            if (!target || target <= 0) { alert('Введите корректную цель!'); return; }
+            data.goals.push({ id: Date.now(), name, habitId, period, target });
+            saveData();
+            closeModal('addGoalModal');
+            updateAll();
+        }
+
+        function requestDeleteHabit(habitId) { pendingDelete = { type: 'habit', id: habitId }; openModal('deleteConfirmModal'); }
+        function requestDeleteGoal(goalId) { pendingDelete = { type: 'goal', id: goalId }; openModal('deleteConfirmModal'); }
+
+        function confirmDelete() {
+            if (!pendingDelete) return;
+            if (pendingDelete.type === 'habit') {
+                data.habits = data.habits.filter(h => h.id !== pendingDelete.id);
+                data.goals = data.goals.filter(g => g.habitId !== pendingDelete.id);
+            } else if (pendingDelete.type === 'goal') {
+                data.goals = data.goals.filter(g => g.id !== pendingDelete.id);
+            }
+            pendingDelete = null;
+            saveData();
+            closeModal('deleteConfirmModal');
+            updateAll();
+        }
+
+        function renderHabitsLabels() {
+            let html = '';
+            data.habits.forEach(h => {
+                html += `<div class="habit-row-label"><span class="icon">${h.icon}</span><span class="name">${h.name}</span><button class="delete-habit-btn" onclick="requestDeleteHabit(${h.id})">🗑</button></div>`;
+            });
+            document.getElementById('habitsLabels').innerHTML = html;
+        }
+
+        function renderGoals() {
+            let html = '';
+            const periodLabels = { day: 'день', week: 'неделя', month: 'месяц', year: 'год' };
+            data.goals.forEach(goal => {
+                const habit = data.habits.find(h => h.id === goal.habitId);
+                if (!habit) return;
+                const progress = getGoalProgress(goal);
+                const isDone = progress >= 100;
+                html += `<div class="goal-item">
+                    <div class="goal-item-header"><span class="goal-item-name">${habit.icon} ${goal.name}</span><span class="goal-status ${isDone ? 'done' : 'active'}">${isDone ? '✓ Готово' : 'В процессе'}</span></div>
+                    <div class="goal-item-details">${habit.name} • ${periodLabels[goal.period]} • Цель: ${goal.target}</div>
+                    <div class="goal-progress-bar"><div class="goal-progress-fill" style="width: ${Math.min(100, progress)}%; background: ${isDone ? '#4ade80' : '#2a5aaa'}"></div></div>
+                    <div class="goal-item-details" style="margin-top: 3px;">${progress}% (${getCurrentForGoal(goal)}/${goal.target})</div>
+                    <button class="goal-delete-btn" onclick="requestDeleteGoal(${goal.id})"> Удалить цель</button>
+                </div>`;
+            });
+            if (data.goals.length === 0) html = '<div style="color: #666; font-size: 12px; text-align: center; padding: 15px;">Нет целей. Добавьте первую!</div>';
+            document.getElementById('goalsList').innerHTML = html;
+        }
+
+        function getCurrentForGoal(goal) { return getHabitCount(goal.habitId, goal.period); }
+        function getGoalProgress(goal) { const c = getCurrentForGoal(goal); return Math.min(100, Math.round((c / goal.target) * 100)); }
+
+        function getHabitCount(habitId, period) {
+            let count = 0;
+            const today = new Date();
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            if (period === 'month') {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const monthKey = getMonthKey();
+                for (let d = 1; d <= daysInMonth; d++) { if (data.habitLogs[`${habitId}-${monthKey}-${d}`]) count++; }
+            } else if (period === 'week') {
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay());
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
+                    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                    if (data.habitLogs[`${habitId}-${key}`]) count++;
+                }
+            } else if (period === 'day') {
+                const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+                if (data.habitLogs[`${habitId}-${key}`]) count = 1;
+            } else if (period === 'year') {
+                for (let m = 0; m < 12; m++) {
+                    const daysInM = new Date(year, m + 1, 0).getDate();
+                    for (let d = 1; d <= daysInM; d++) { if (data.habitLogs[`${habitId}-${year}-${m}-${d}`]) count++; }
+                }
+            }
+            return count;
+        }
+
+        function renderCircle() {
+            const labels = [], values = [], colors = [];
+
+            data.goals.forEach((goal, index) => {
+                const habit = data.habits.find(h => h.id === goal.habitId);
+                if (!habit) return;
+                const progress = getGoalProgress(goal);
+                const current = getCurrentForGoal(goal);
+                labels.push(`${habit.icon} ${goal.name}`);
+                values.push(progress);
+                colors.push(COLORS[index % COLORS.length]);
+            });
+
+            if (mainCircleChart) mainCircleChart.destroy();
+
+            if (values.length === 0) {
+                mainCircleChart = new Chart(document.getElementById('mainCircle'), {
+                    type: 'doughnut',
+                    data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#1e1e1e'], borderWidth: 0, cutout: '70%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                document.getElementById('circleLegend').innerHTML = '<div style="color: #666; text-align: center; font-size: 12px;">Добавьте цели чтобы увидеть прогресс</div>';
+                return;
+            }
+
+            mainCircleChart = new Chart(document.getElementById('mainCircle'), {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#141414' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#ddd', borderColor: '#2a2a2a', borderWidth: 1,
+                            callbacks: { label: function (context) { const goal = data.goals[context.dataIndex]; const current = getCurrentForGoal(goal); return `${context.label}: ${current}/${goal.target} (${context.parsed}%)`; } }
+                        }
+                    }
+                }
+            });
+
+            let legendHtml = '';
+            labels.forEach((label, i) => {
+                const goal = data.goals[i];
+                const current = getCurrentForGoal(goal);
+                const percent = values[i];
+                const status = percent >= 100 ? '✓' : '→';
+                legendHtml += `<div class="legend-item"><div class="legend-color" style="background: ${colors[i]}"></div><span>${status} ${label}: ${current}/${goal.target} (${percent}%)</span></div>`;
+            });
+            document.getElementById('circleLegend').innerHTML = legendHtml;
+        }
+
+        function renderTable() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthKey = getMonthKey();
+
+            document.getElementById('monthTitle').textContent = `${MONTHS[month]} ${year}`;
+
+            const thead = document.getElementById('habitsHead');
+            const tbody = document.getElementById('habitsBody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            const row1 = document.createElement('tr');
+            const emptyTh1 = document.createElement('th');
+            emptyTh1.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:120px;';
+            row1.appendChild(emptyTh1);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const dayName = DAY_NAMES[date.getDay()];
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const th = document.createElement('th');
+                th.textContent = dayName;
+                th.className = isWeekend ? 'weekend' : 'day-name';
+                row1.appendChild(th);
+            }
+            thead.appendChild(row1);
+
+            const row2 = document.createElement('tr');
+            const emptyTh2 = document.createElement('th');
+            emptyTh2.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:120px;';
+            row2.appendChild(emptyTh2);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const th = document.createElement('th');
+                th.innerHTML = `<span class="date-num">${d}</span>`;
+                row2.appendChild(th);
+            }
+            thead.appendChild(row2);
+
+            data.habits.forEach(habit => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.className = 'habit-name';
+                nameTd.textContent = `${habit.icon} ${habit.name}`;
+                tr.appendChild(nameTd);
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const td = document.createElement('td');
+                    td.className = 'check-cell';
+                    const done = data.habitLogs[`${habit.id}-${monthKey}-${d}`] || false;
+                    if (done) td.classList.add('done');
+                    td.textContent = done ? '●' : '○';
+                    td.onclick = function () {
+                        const key = `${habit.id}-${monthKey}-${d}`;
+                        data.habitLogs[key] = !data.habitLogs[key];
+                        saveData();
+                        updateAll();
+                    };
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderWave() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            if (wavePeriod === 'month') {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const monthKey = getMonthKey();
+                const dailyActivity = [], labels = [];
+                for (let d = 1; d <= daysInMonth; d++) {
+                    let count = 0;
+                    data.habits.forEach(h => { if (data.habitLogs[`${h.id}-${monthKey}-${d}`]) count++; });
+                    dailyActivity.push(count);
+                    labels.push(d);
+                }
+                if (waveChartInstance) waveChartInstance.destroy();
+                waveChartInstance = new Chart(document.getElementById('waveChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'Активность', data: dailyActivity, borderColor: '#2a5aaa', backgroundColor: 'rgba(42, 90, 170, 0.2)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#2a5aaa', pointHoverRadius: 6 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
+                        scales: {
+                            y: { beginAtZero: true, min: 0, max: Math.max(data.habits.length, 1), ticks: { color: '#666', stepSize: 1, font: { size: 12 }, callback: function (value) { return value; } }, grid: { color: '#1e1e1e' } },
+                            x: { ticks: { color: '#666', maxTicksLimit: 15, font: { size: 12 }, padding: 10 }, grid: { display: false } }
+                        },
+                        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 } } }
+                    }
+                });
+            } else if (wavePeriod === 'year') {
+                const monthlyActivity = [], labels = [], bgColors = [];
+                const shortMonths = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+                const currentMonth = currentDate.getMonth();
+                for (let m = 0; m < 12; m++) {
+                    let count = 0;
+                    const daysInM = new Date(year, m + 1, 0).getDate();
+                    for (let d = 1; d <= daysInM; d++) { data.habits.forEach(h => { if (data.habitLogs[`${h.id}-${year}-${m}-${d}`]) count++; }); }
+                    monthlyActivity.push(count);
+                    labels.push(shortMonths[m]);
+                    if (m === currentMonth) bgColors.push('#2a5aaa');
+                    else if (m < currentMonth) bgColors.push('#1a3a6e');
+                    else bgColors.push('#1e1e1e');
+                }
+                if (waveChartInstance) waveChartInstance.destroy();
+                waveChartInstance = new Chart(document.getElementById('waveChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'Отметок за месяц', data: monthlyActivity, backgroundColor: bgColors, borderColor: '#2a5aaa', borderWidth: 1, borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.8 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { color: '#666', stepSize: 1, font: { size: 12 } }, grid: { color: '#1e1e1e' } },
+                            x: { ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: false, padding: 10 }, grid: { display: false } }
+                        },
+                        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 }, callbacks: { label: function (context) { return `${context.parsed.y} отметок`; } } } }
+                    }
+                });
+            }
+        }
+
+        function updateAll() { renderHabitsLabels(); renderGoals(); renderTable(); renderWave(); renderCircle(); }
+        updateAll();
+    </script>
+</body>
+
+</html>
