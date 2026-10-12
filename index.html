@@ -148,7 +148,6 @@
             border: 1px solid #2a2a2a;
             padding: 15px;
             height: 400px;
-            /* было 350px, стало 400px */
         }
 
         .wave-box h3 {
@@ -372,9 +371,30 @@
 
         .circle-chart {
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             margin: 0 auto;
+        }
+
+        .circle-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .circle-center-text .big {
+            font-size: 32px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .circle-center-text .small {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
         }
 
         .circle-legend {
@@ -501,6 +521,64 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .goal-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .goal-row-name {
+            flex: 1;
+            font-size: 13px;
+            color: #ddd;
+            min-width: 100px;
+        }
+
+        .goal-row-percent {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .goal-row-bar {
+            width: 100%;
+            height: 24px;
+            background: #1e1e1e;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .goal-row-bar-fill {
+            height: 100%;
+            background: #2a5aaa;
+            border-radius: 4px;
+            transition: width 0.4s;
+        }
+
+        .goal-row-delete {
+            background: transparent;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .goal-row-delete:hover {
+            color: #e94560;
+        }
+
+        .goal-row-details {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -544,15 +622,22 @@
             </div>
 
             <div class="right-panel">
-                <div class="goals-panel">
-                    <h3>Мои цели</h3>
-                    <div id="goalsList"></div>
+                <!-- Круговая диаграмма - общий прогресс -->
+                <div class="circle-panel">
+                    <h3>Общий прогресс</h3>
+                    <div class="circle-chart">
+                        <canvas id="mainCircle"></canvas>
+                        <div class="circle-center-text">
+                            <div class="big" id="circlePercent">0%</div>
+                            <div class="small" id="circleLabel">0/0</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="circle-panel">
+                <!-- Список целей с прямоугольниками -->
+                <div class="goals-panel">
                     <h3>Прогресс по целям</h3>
-                    <div class="circle-chart"><canvas id="mainCircle"></canvas></div>
-                    <div class="circle-legend" id="circleLegend"></div>
+                    <div id="goalsList"></div>
                 </div>
             </div>
         </div>
@@ -619,7 +704,7 @@
         let mainCircleChart, waveChartInstance;
 
         function loadData() {
-            const saved = localStorage.getItem('lifeTrackerV8');
+            const saved = localStorage.getItem('lifeTrackerV9');
             if (saved) return JSON.parse(saved);
             return {
                 habits: [
@@ -632,7 +717,7 @@
             };
         }
 
-        function saveData() { localStorage.setItem('lifeTrackerV8', JSON.stringify(data)); }
+        function saveData() { localStorage.setItem('lifeTrackerV9', JSON.stringify(data)); }
         function getMonthKey() { return `${currentDate.getFullYear()}-${currentDate.getMonth()}`; }
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); updateAll(); }
 
@@ -712,20 +797,38 @@
         function renderGoals() {
             let html = '';
             const periodLabels = { day: 'день', week: 'неделя', month: 'месяц', year: 'год' };
+
             data.goals.forEach(goal => {
                 const habit = data.habits.find(h => h.id === goal.habitId);
                 if (!habit) return;
-                const progress = getGoalProgress(goal);
-                const isDone = progress >= 100;
-                html += `<div class="goal-item">
-                    <div class="goal-item-header"><span class="goal-item-name">${habit.icon} ${goal.name}</span><span class="goal-status ${isDone ? 'done' : 'active'}">${isDone ? '✓ Готово' : 'В процессе'}</span></div>
-                    <div class="goal-item-details">${habit.name} • ${periodLabels[goal.period]} • Цель: ${goal.target}</div>
-                    <div class="goal-progress-bar"><div class="goal-progress-fill" style="width: ${Math.min(100, progress)}%; background: ${isDone ? '#4ade80' : '#2a5aaa'}"></div></div>
-                    <div class="goal-item-details" style="margin-top: 3px;">${progress}% (${getCurrentForGoal(goal)}/${goal.target})</div>
-                    <button class="goal-delete-btn" onclick="requestDeleteGoal(${goal.id})"> Удалить цель</button>
-                </div>`;
+
+                const current = getCurrentForGoal(goal);
+                const percent = Math.min(100, Math.round((current / goal.target) * 100));
+                const isDone = percent >= 100;
+
+                html += `
+            <div class="goal-row">
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="goal-row-name">${habit.icon} ${goal.name}</span>
+                        <span class="goal-row-percent" style="color: ${isDone ? '#4ade80' : '#fff'}">${percent}%</span>
+                    </div>
+                    <div class="goal-row-bar">
+                        <div class="goal-row-bar-fill" style="width: ${percent}%; background: ${isDone ? '#4ade80' : '#2a5aaa'}"></div>
+                    </div>
+                    <div class="goal-row-details">
+                        ${habit.name} • ${periodLabels[goal.period]} • ${current}/${goal.target}
+                    </div>
+                    <button class="goal-row-delete" onclick="requestDeleteGoal(${goal.id})">🗑 Удалить</button>
+                </div>
+            </div>
+        `;
             });
-            if (data.goals.length === 0) html = '<div style="color: #666; font-size: 12px; text-align: center; padding: 15px;">Нет целей. Добавьте первую!</div>';
+
+            if (data.goals.length === 0) {
+                html = '<div style="color: #666; font-size: 12px; text-align: center; padding: 15px;">Нет целей. Добавьте первую!</div>';
+            }
+
             document.getElementById('goalsList').innerHTML = html;
         }
 
@@ -762,55 +865,94 @@
         }
 
         function renderCircle() {
-            const labels = [], values = [], colors = [];
+            let totalTarget = 0;
+            let totalCurrent = 0;
 
-            data.goals.forEach((goal, index) => {
+            // Считаем общую сумму по всем целям
+            data.goals.forEach(goal => {
                 const habit = data.habits.find(h => h.id === goal.habitId);
                 if (!habit) return;
-                const progress = getGoalProgress(goal);
                 const current = getCurrentForGoal(goal);
-                labels.push(`${habit.icon} ${goal.name}`);
-                values.push(progress);
-                colors.push(COLORS[index % COLORS.length]);
+                totalTarget += goal.target;
+                totalCurrent += current;
             });
+
+            const totalRemaining = totalTarget - totalCurrent;
+            const totalPercent = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
 
             if (mainCircleChart) mainCircleChart.destroy();
 
-            if (values.length === 0) {
+            // Если целей нет
+            if (totalTarget === 0) {
                 mainCircleChart = new Chart(document.getElementById('mainCircle'), {
                     type: 'doughnut',
-                    data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#1e1e1e'], borderWidth: 0, cutout: '70%' }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    data: {
+                        labels: ['Нет данных'],
+                        datasets: [{
+                            data: [100],
+                            backgroundColor: ['#1e1e1e'],
+                            borderWidth: 0,
+                            cutout: '70%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                    }
                 });
-                document.getElementById('circleLegend').innerHTML = '<div style="color: #666; text-align: center; font-size: 12px;">Добавьте цели чтобы увидеть прогресс</div>';
+                document.getElementById('circlePercent').textContent = '0%';
+                document.getElementById('circleLabel').textContent = 'Нет целей';
                 return;
             }
 
+            // Рисуем круг: [выполнено, осталось]
             mainCircleChart = new Chart(document.getElementById('mainCircle'), {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
-                    labels: labels,
-                    datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#141414' }]
+                    labels: ['Выполнено', 'Осталось'],
+                    datasets: [{
+                        data: [totalCurrent, totalRemaining],
+                        backgroundColor: ['#2a5aaa', '#2a2a2a'],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    rotation: -90,
+                    circumference: 360,
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#ddd', borderColor: '#2a2a2a', borderWidth: 1,
-                            callbacks: { label: function (context) { const goal = data.goals[context.dataIndex]; const current = getCurrentForGoal(goal); return `${context.label}: ${current}/${goal.target} (${context.parsed}%)`; } }
+                            backgroundColor: '#1a1a1a',
+                            titleColor: '#fff',
+                            bodyColor: '#ddd',
+                            callbacks: {
+                                label: function (context) {
+                                    const percent = Math.round((context.parsed / totalTarget) * 100);
+                                    return `${context.label}: ${context.parsed} из ${totalTarget} (${percent}%)`;
+                                }
+                            }
                         }
                     }
                 }
             });
 
+            // Текст в центре круга
+            document.getElementById('circlePercent').textContent = totalPercent + '%';
+            document.getElementById('circleLabel').textContent = `${totalCurrent}/${totalTarget}`;
+
+            // Легенда с разбивкой по целям
             let legendHtml = '';
-            labels.forEach((label, i) => {
-                const goal = data.goals[i];
+            data.goals.forEach((goal, index) => {
+                const habit = data.habits.find(h => h.id === goal.habitId);
+                if (!habit) return;
                 const current = getCurrentForGoal(goal);
-                const percent = values[i];
+                const percent = Math.round((current / goal.target) * 100);
                 const status = percent >= 100 ? '✓' : '→';
-                legendHtml += `<div class="legend-item"><div class="legend-color" style="background: ${colors[i]}"></div><span>${status} ${label}: ${current}/${goal.target} (${percent}%)</span></div>`;
+                legendHtml += `<div class="legend-item"><div class="legend-color" style="background: ${COLORS[index % COLORS.length]}"></div><span>${status} ${habit.icon} ${goal.name}: ${current}/${goal.target} (${percent}%)</span></div>`;
             });
             document.getElementById('circleLegend').innerHTML = legendHtml;
         }
@@ -904,7 +1046,7 @@
                         layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
                         scales: {
                             y: { beginAtZero: true, min: 0, max: Math.max(data.habits.length, 1), ticks: { color: '#666', stepSize: 1, font: { size: 12 }, callback: function (value) { return value; } }, grid: { color: '#1e1e1e' } },
-                            x: { ticks: { color: '#666', maxTicksLimit: 15, font: { size: 12 }, padding: 10 }, grid: { display: false } }
+                            x: { ticks: { color: '#666', maxTicksLimit: 15, font: { size: 12 }, padding: 15 }, grid: { display: false } }
                         },
                         plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 } } }
                     }
@@ -935,7 +1077,7 @@
                         layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
                         scales: {
                             y: { beginAtZero: true, ticks: { color: '#666', stepSize: 1, font: { size: 12 } }, grid: { color: '#1e1e1e' } },
-                            x: { ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: false, padding: 10 }, grid: { display: false } }
+                            x: { ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: false, padding: 15 }, grid: { display: false } }
                         },
                         plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 }, callbacks: { label: function (context) { return `${context.parsed.y} отметок`; } } } }
                     }
