@@ -1,587 +1,155 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Life Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; min-height: 100vh; }
         body {
-            height: 100%;
-            min-height: 100vh;
-        }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0a0a0a;
             color: #e0e0e0;
             padding: 15px;
             display: flex;
             flex-direction: column;
         }
-
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
+        .container { max-width: 1200px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; width: 100%; }
+        
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 15px 25px;
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding: 15px 20px; background: #141414;
+            border-radius: 10px; border: 1px solid #2a2a2a;
         }
-
-        .month-nav {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .month-nav h1 {
-            font-size: 28px;
-            min-width: 250px;
-            text-align: center;
-            color: #fff;
-        }
-
+        .month-nav { display: flex; align-items: center; gap: 15px; }
+        .month-nav h1 { font-size: 22px; min-width: 200px; text-align: center; color: #fff; }
         .nav-btn {
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #3a3a3a;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
+            background: #2a2a2a; color: #fff; border: 1px solid #3a3a3a;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 16px;
         }
-
-        .nav-btn:hover {
-            background: #3a3a3a;
-        }
+        .nav-btn:hover { background: #3a3a3a; }
 
         .main-layout {
-            display: grid;
-            grid-template-columns: 240px 1fr 300px;
-            gap: 15px;
-            flex: 1;
+            display: grid; grid-template-columns: 320px 1fr 300px; gap: 15px; flex: 1;
         }
 
-        .habits-list-panel {
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
+        .panel {
+            background: #141414; border-radius: 10px; border: 1px solid #2a2a2a; padding: 15px;
+            display: flex; flex-direction: column;
+        }
+        .panel h3 {
+            font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2a2a;
         }
 
-        .habits-list-panel h3 {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #2a2a2a;
+        /* Список целей + Сегодня */
+        .goal-row-item {
+            display: grid; grid-template-columns: 1fr auto 40px; gap: 8px;
+            align-items: center; padding: 10px 0; border-bottom: 1px solid #1e1e1e;
         }
+        .goal-row-item:last-child { border-bottom: none; }
+        .goal-name { font-size: 14px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .goal-actions { display: flex; gap: 4px; }
+        .action-btn {
+            background: #1e1e1e; border: none; color: #888; width: 26px; height: 26px;
+            border-radius: 4px; cursor: pointer; font-size: 12px; display: flex;
+            align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .action-btn:hover { color: #fff; background: #2a2a2a; }
+        .action-btn.delete:hover { color: #e94560; background: #2a1e1e; }
+        .action-btn.complete:hover { color: #4ade80; background: #1e2a1e; }
 
-        .habit-row-label {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 10px 8px;
-            border-bottom: 1px solid #1e1e1e;
-            font-size: 14px;
-            color: #ddd;
+        .today-check {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid #333;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: transparent; transition: all 0.2s; justify-self: center;
         }
-
-        .habit-row-label .icon {
-            font-size: 18px;
-            margin-right: 6px;
-        }
-
-        .habit-row-label .name {
-            flex: 1;
-        }
-
-        .delete-habit-btn {
-            background: transparent;
-            color: #666;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .delete-habit-btn:hover {
-            color: #e94560;
-            background: #1e1e1e;
-        }
-
-        .center-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            min-height: 0;
-        }
-
-        .wave-box {
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            padding: 15px;
-            height: 400px;
-        }
-
-        .wave-box h3 {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .period-selector {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
-        .period-btn {
-            flex: 1;
-            min-width: 60px;
-            background: #1e1e1e;
-            color: #888;
-            border: 1px solid #2a2a2a;
-            padding: 8px 6px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .period-btn.active {
-            background: #1a3a6e;
-            color: #fff;
-            border-color: #2a5aaa;
-        }
-
-        .table-box {
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            padding: 15px;
-            flex: 1;
-            overflow: auto;
-        }
-
-        .table-box h3 {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        table {
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 4px 2px;
-            text-align: center;
-            border: 1px solid #1e1e1e;
-        }
-
-        th {
-            background: #1a1a1a;
-            color: #888;
-            font-weight: normal;
-            font-size: 11px;
-        }
-
-        th.day-name {
-            color: #2a5aaa;
-        }
-
-        th.weekend {
-            color: #e94560;
-        }
-
-        th.date-num {
-            color: #ccc;
-            font-size: 13px;
-        }
-
-        td.habit-name {
-            text-align: left;
-            padding-left: 10px;
-            font-size: 14px;
-            color: #ddd;
-            white-space: nowrap;
-            background: #141414;
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            min-width: 120px;
-        }
-
-        td.check-cell {
-            cursor: pointer;
-            font-size: 18px;
-            user-select: none;
-            color: #333;
-            min-width: 30px;
-            width: 30px;
-        }
-
-        td.check-cell:hover {
-            background: #1e1e1e;
-        }
-
-        td.check-cell.done {
-            color: #2a5aaa;
-        }
-
-        .right-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .goals-panel {
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            padding: 15px;
-        }
-
-        .goals-panel h3 {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #2a2a2a;
-        }
-
-        .goal-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #1e1e1e;
-        }
-
-        .goal-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .goal-item-name {
-            font-size: 13px;
-            color: #ddd;
-            flex: 1;
-        }
-
-        .goal-status {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin-left: 6px;
-        }
-
-        .goal-status.active {
-            background: #1a3a6e;
-            color: #fff;
-        }
-
-        .goal-status.done {
-            background: #1a6e3a;
-            color: #fff;
-        }
-
-        .goal-item-details {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .goal-progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #1e1e1e;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .goal-progress-fill {
-            height: 100%;
-            background: #2a5aaa;
-            border-radius: 3px;
-            transition: width 0.4s;
-        }
-
-        .goal-delete-btn {
-            background: transparent;
-            color: #666;
-            border: none;
-            cursor: pointer;
-            font-size: 11px;
-            margin-top: 4px;
-        }
-
-        .goal-delete-btn:hover {
-            color: #e94560;
-        }
-
-        .circle-panel {
-            background: #141414;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            padding: 15px;
-        }
-
-        .circle-panel h3 {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-
-        .circle-chart {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 0 auto;
-        }
-
-        .circle-center-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            pointer-events: none;
-        }
-
-        .circle-center-text .big {
-            font-size: 32px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .circle-center-text .small {
-            font-size: 12px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .circle-legend {
-            margin-top: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: #ddd;
-        }
-
-        .legend-color {
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-        }
+        .today-check:hover { border-color: #2a5aaa; }
+        .today-check.done { background: #2a5aaa; border-color: #2a5aaa; color: #fff; }
 
         .add-btn {
-            background: #1e1e1e;
-            color: #2a5aaa;
-            border: 1px solid #2a5aaa;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            width: 100%;
-            margin-top: 8px;
+            background: #1e1e1e; color: #2a5aaa; border: 1px solid #2a5aaa;
+            padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+            width: 100%; margin-top: 12px; transition: all 0.2s;
         }
+        .add-btn:hover { background: #1a3a6e; color: #fff; }
 
-        .add-btn:hover {
-            background: #1a3a6e;
-            color: #fff;
+        /* Центр */
+        .center-panel { display: flex; flex-direction: column; gap: 15px; min-height: 0; }
+        .wave-box { background: #141414; border-radius: 10px; border: 1px solid #2a2a2a; padding: 15px; height: 300px; }
+        .wave-box h3 { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        
+        .table-box {
+            background: #141414; border-radius: 10px; border: 1px solid #2a2a2a;
+            padding: 15px; flex: 1; overflow: auto;
         }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 4px 2px; text-align: center; border: 1px solid #1e1e1e; }
+        th { background: #1a1a1a; color: #888; font-weight: normal; font-size: 11px; }
+        th.day-name { color: #2a5aaa; }
+        th.weekend { color: #e94560; }
+        th.date-num { color: #ccc; font-size: 12px; }
+        td.habit-name {
+            text-align: left; padding-left: 10px; font-size: 13px; color: #ddd;
+            white-space: nowrap; background: #141414; position: sticky; left: 0; z-index: 2; min-width: 100px;
+        }
+        td.check-cell { cursor: pointer; font-size: 16px; user-select: none; color: #333; min-width: 28px; }
+        td.check-cell:hover { background: #1e1e1e; }
+        td.check-cell.done { color: #2a5aaa; }
+        td.check-cell.inactive { background: #0d0d0d; cursor: default; }
 
+        /* Правая панель */
+        .right-panel { display: flex; flex-direction: column; gap: 15px; }
+        .circle-chart { position: relative; width: 200px; height: 200px; margin: 0 auto; }
+        .circle-center-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none;
+        }
+        .circle-center-text .big { font-size: 28px; font-weight: bold; color: #fff; }
+        .circle-center-text .small { font-size: 11px; color: #666; margin-top: 4px; }
+        .circle-legend { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ddd; }
+        .legend-color { width: 10px; height: 10px; border-radius: 2px; }
+        
+        .best-day-card {
+            margin-top: 15px; background: #1e1e1e; padding: 12px; border-radius: 6px; text-align: center;
+        }
+        .best-day-card .label { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .best-day-card .value { font-size: 14px; color: #fbbf24; font-weight: bold; }
+
+        /* Модальные окна */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center;
         }
-
-        .modal.active {
-            display: flex;
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
-            background: #141414;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            padding: 25px;
-            max-width: 450px;
-            width: 90%;
+            background: #141414; border: 1px solid #2a2a2a; border-radius: 10px;
+            padding: 20px; max-width: 400px; width: 90%;
         }
-
-        .modal-content h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #fff;
+        .modal-content h2 { font-size: 18px; margin-bottom: 15px; color: #fff; }
+        .modal-content label { display: block; margin-bottom: 6px; font-size: 12px; color: #888; }
+        .modal-content input, .modal-content select {
+            width: 100%; background: #1e1e1e; color: #fff; border: 1px solid #2a2a2a;
+            padding: 8px; border-radius: 5px; margin-bottom: 12px; font-size: 13px;
         }
-
-        .modal-content label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #888;
-        }
-
-        .modal-content input,
-        .modal-content select {
-            width: 100%;
-            background: #1e1e1e;
-            color: #fff;
-            border: 1px solid #2a2a2a;
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 12px;
-            font-size: 13px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
+        .modal-buttons { display: flex; gap: 8px; margin-top: 15px; }
         .modal-buttons button {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
+            flex: 1; padding: 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 13px;
         }
+        .btn-cancel { background: #2a2a2a; color: #fff; }
+        .btn-confirm { background: #2a5aaa; color: #fff; }
+        .btn-danger { background: #e94560; color: #fff; }
 
-        .btn-cancel {
-            background: #2a2a2a;
-            color: #fff;
-        }
-
-        .btn-confirm {
-            background: #2a5aaa;
-            color: #fff;
-        }
-
-        .btn-danger {
-            background: #e94560;
-            color: #fff;
-        }
-
-        @media (max-width: 1100px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .goal-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 0;
-            border-bottom: 1px solid #1e1e1e;
-        }
-
-        .goal-row-name {
-            flex: 1;
-            font-size: 13px;
-            color: #ddd;
-            min-width: 100px;
-        }
-
-        .goal-row-percent {
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-            min-width: 45px;
-            text-align: right;
-        }
-
-        .goal-row-bar {
-            width: 100%;
-            height: 24px;
-            background: #1e1e1e;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 4px;
-        }
-
-        .goal-row-bar-fill {
-            height: 100%;
-            background: #2a5aaa;
-            border-radius: 4px;
-            transition: width 0.4s;
-        }
-
-        .goal-row-delete {
-            background: transparent;
-            color: #666;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .goal-row-delete:hover {
-            color: #e94560;
-        }
-
-        .goal-row-details {
-            font-size: 11px;
-            color: #666;
-            margin-top: 2px;
+        @media (max-width: 1000px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .wave-box { height: 250px; }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div class="header">
@@ -594,20 +162,17 @@
         </div>
 
         <div class="main-layout">
-            <div class="habits-list-panel">
-                <h3>Привычки</h3>
-                <div id="habitsLabels"></div>
-                <button class="add-btn" onclick="openAddHabitModal()">+ Добавить привычку</button>
+            <!-- Левая панель: Цели + Сегодня -->
+            <div class="panel">
+                <h3>Цели &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Сегодня</h3>
+                <div id="goalsListPanel"></div>
                 <button class="add-btn" onclick="openAddGoalModal()">+ Добавить цель</button>
             </div>
 
+            <!-- Центральная панель -->
             <div class="center-panel">
                 <div class="wave-box">
                     <h3>Активность</h3>
-                    <div class="period-selector">
-                        <button class="period-btn active" onclick="setWavePeriod('month')">Месяц</button>
-                        <button class="period-btn" onclick="setWavePeriod('year')">Год</button>
-                    </div>
                     <canvas id="waveChart"></canvas>
                 </div>
                 <div class="table-box">
@@ -621,9 +186,9 @@
                 </div>
             </div>
 
+            <!-- Правая панель -->
             <div class="right-panel">
-                <!-- Круговая диаграмма - общий прогресс -->
-                <div class="circle-panel">
+                <div class="panel">
                     <h3>Общий прогресс</h3>
                     <div class="circle-chart">
                         <canvas id="mainCircle"></canvas>
@@ -634,56 +199,90 @@
                     </div>
                 </div>
 
-                <!-- Список целей с прямоугольниками -->
-                <div class="goals-panel">
-                    <h3>Прогресс по целям</h3>
-                    <div id="goalsList"></div>
+                <div class="panel">
+                    <h3>Учёт времени (Пн–Вс)</h3>
+                    <div class="circle-chart" style="height: 160px; width: 160px;">
+                        <canvas id="timeCircle"></canvas>
+                        <div class="circle-center-text">
+                            <div class="big" id="timeTotal" style="font-size: 18px;">0ч 0м</div>
+                            <div class="small">за неделю</div>
+                        </div>
+                    </div>
+                    <div id="timeLegend" class="circle-legend"></div>
+                    
+                    <div class="best-day-card">
+                        <div class="label">🏆 Лучший день месяца</div>
+                        <div class="value" id="bestDayText">Нет данных</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="addHabitModal">
+    <!-- Модальное окно: Добавить/Редактировать цель -->
+    <div class="modal" id="goalModal">
         <div class="modal-content">
-            <h2>Новая привычка</h2>
+            <h2 id="goalModalTitle">Новая цель</h2>
+            <input type="hidden" id="editGoalId">
             <label>Название:</label>
-            <input type="text" id="newHabitName" placeholder="Например: Чтение">
-            <label>Иконка (эмодзи):</label>
-            <input type="text" id="newHabitIcon" placeholder="Например: 📚" maxlength="2">
+            <input type="text" id="goalName" placeholder="Например: Английский">
+            <label>Дата начала:</label>
+            <input type="date" id="goalStartDate">
+            <label>Дата окончания (необязательно):</label>
+            <input type="date" id="goalEndDate">
+            <label>Цель (отметок в месяц):</label>
+            <input type="number" id="goalTarget" value="30">
             <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeModal('addHabitModal')">Отмена</button>
-                <button class="btn-confirm" onclick="confirmAddHabit()">Добавить</button>
+                <button class="btn-cancel" onclick="closeModal('goalModal')">Отмена</button>
+                <button class="btn-confirm" onclick="saveGoal()">Сохранить</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="addGoalModal">
+    <!-- Модальное окно: Добавить время -->
+    <div class="modal" id="addTimeModal">
         <div class="modal-content">
-            <h2>Новая цель</h2>
-            <label>Название цели:</label>
-            <input type="text" id="newGoalName" placeholder="Например: Прочитать 3 книги">
-            <label>Привязать к привычке:</label>
-            <select id="newGoalHabit"></select>
-            <label>Период:</label>
-            <select id="newGoalPeriod">
-                <option value="day">День</option>
-                <option value="week">Неделя</option>
-                <option value="month" selected>Месяц</option>
-                <option value="year">Год</option>
-            </select>
-            <label>Цель (количество отметок):</label>
-            <input type="number" id="newGoalTarget" placeholder="Например: 30" value="30">
+            <h2>Добавить время</h2>
+            <label>Цель:</label>
+            <select id="timeGoalSelect"></select>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Часы:</label>
+                    <input type="number" id="timeHours" min="0" value="0">
+                </div>
+                <div style="flex:1;">
+                    <label>Минуты:</label>
+                    <input type="number" id="timeMinutes" min="0" max="59" value="0">
+                </div>
+            </div>
+            <label>Дата:</label>
+            <input type="date" id="timeDate">
             <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeModal('addGoalModal')">Отмена</button>
-                <button class="btn-confirm" onclick="confirmAddGoal()">Создать</button>
+                <button class="btn-cancel" onclick="closeModal('addTimeModal')">Отмена</button>
+                <button class="btn-confirm" onclick="saveTime()">Добавить</button>
             </div>
         </div>
     </div>
 
+    <!-- Модальное окно: Подтверждение завершения -->
+    <div class="modal" id="completeConfirmModal">
+        <div class="modal-content">
+            <h2>Завершить цель?</h2>
+            <p style="color: #ddd; margin-bottom: 15px; font-size: 13px;">Период активности будет отмечен зелёной полосой. Вы уверены?</p>
+            <input type="hidden" id="completeGoalId">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('completeConfirmModal')">Отмена</button>
+                <button class="btn-confirm" onclick="confirmComplete()">Да, завершить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Подтверждение удаления -->
     <div class="modal" id="deleteConfirmModal">
         <div class="modal-content">
-            <h2>Подтверждение удаления</h2>
-            <p style="color: #ddd; margin-bottom: 15px;">Вы уверены что хотите удалить?</p>
+            <h2>Удалить цель?</h2>
+            <p style="color: #ddd; margin-bottom: 15px; font-size: 13px;">Это действие нельзя отменить. Все отметки и время будут удалены.</p>
+            <input type="hidden" id="deleteGoalId">
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeModal('deleteConfirmModal')">Отмена</button>
                 <button class="btn-danger" onclick="confirmDelete()">Удалить</button>
@@ -692,402 +291,475 @@
     </div>
 
     <script>
-        const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-        const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
         const COLORS = ['#2a5aaa', '#e94560', '#4ade80', '#fbbf24', '#a855f7', '#06b6d4', '#f97316', '#ec4899'];
+        const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
 
         let currentDate = new Date();
-        let wavePeriod = 'month';
         let data = loadData();
-        let pendingDelete = null;
-        let mainCircleChart, waveChartInstance;
+        let mainCircleChart, waveChartInstance, timeChartInstance;
 
         function loadData() {
             const saved = localStorage.getItem('lifeTrackerV9');
-            if (saved) return JSON.parse(saved);
-            return {
-                habits: [
-                    { id: 1, name: 'Зал', icon: '💪' },
-                    { id: 2, name: 'Чтение', icon: '📚' },
-                    { id: 3, name: 'Английский', icon: '🇬' }
-                ],
-                habitLogs: {},
-                goals: []
-            };
+            let data;
+            if (saved) {
+                data = JSON.parse(saved);
+                if (!data.timeLogs) data.timeLogs = {};
+                
+                // Миграция старых привычек в новые цели
+                if (data.habits && (!data.goals || data.goals.length === 0)) {
+                    data.goals = data.habits.map(h => ({
+                        id: h.id,
+                        name: h.name.replace(EMOJI_REGEX, '').trim(),
+                        startDate: '2026-10-01', // По умолчанию октябрь, чтобы сохранить прошлый прогресс
+                        endDate: null,
+                        status: 'active',
+                        target: 30
+                    }));
+                }
+                
+                // Миграция логов
+                if (data.habitLogs && !data.goalLogs) {
+                    data.goalLogs = { ...data.habitLogs };
+                } else if (!data.goalLogs) {
+                    data.goalLogs = {};
+                }
+                
+                // Очистка эмодзи и добавление новых полей
+                if (data.goals) {
+                    data.goals = data.goals.map(g => ({
+                        ...g,
+                        name: (g.name || '').replace(EMOJI_REGEX, '').trim(),
+                        startDate: g.startDate || '2026-10-01',
+                        status: g.status || 'active'
+                    }));
+                }
+            } else {
+                data = {
+                    goals: [
+                        { id: 1, name: 'Зал', startDate: '2026-10-01', endDate: null, status: 'active', target: 30 },
+                        { id: 2, name: 'Чтение', startDate: '2026-10-01', endDate: null, status: 'active', target: 30 },
+                        { id: 3, name: 'Английский', startDate: '2026-10-01', endDate: null, status: 'active', target: 30 }
+                    ],
+                    goalLogs: {},
+                    timeLogs: {}
+                };
+            }
+            saveData();
+            return data;
         }
 
         function saveData() { localStorage.setItem('lifeTrackerV9', JSON.stringify(data)); }
         function getMonthKey() { return `${currentDate.getFullYear()}-${currentDate.getMonth()}`; }
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); updateAll(); }
-
-        function setWavePeriod(period) {
-            wavePeriod = period;
-            document.querySelectorAll('.wave-box .period-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            renderWave();
-        }
-
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        function openAddHabitModal() {
-            document.getElementById('newHabitName').value = '';
-            document.getElementById('newHabitIcon').value = '';
-            openModal('addHabitModal');
-        }
+        function cleanName(name) { return name.replace(EMOJI_REGEX, '').trim(); }
 
-        function confirmAddHabit() {
-            const name = document.getElementById('newHabitName').value.trim();
-            const icon = document.getElementById('newHabitIcon').value.trim() || '🎯';
-            if (!name) { alert('Введите название!'); return; }
-            data.habits.push({ id: Date.now(), name, icon });
-            saveData();
-            closeModal('addHabitModal');
-            updateAll();
-        }
-
-        function openAddGoalModal() {
-            if (data.habits.length === 0) { alert('Сначала добавьте привычку!'); return; }
-            const select = document.getElementById('newGoalHabit');
-            select.innerHTML = data.habits.map(h => `<option value="${h.id}">${h.icon} ${h.name}</option>`).join('');
-            document.getElementById('newGoalName').value = '';
-            document.getElementById('newGoalTarget').value = '30';
-            openModal('addGoalModal');
-        }
-
-        function confirmAddGoal() {
-            const name = document.getElementById('newGoalName').value.trim();
-            const habitId = parseInt(document.getElementById('newGoalHabit').value);
-            const period = document.getElementById('newGoalPeriod').value;
-            const target = parseInt(document.getElementById('newGoalTarget').value);
-            if (!name) { alert('Введите название цели!'); return; }
-            if (!target || target <= 0) { alert('Введите корректную цель!'); return; }
-            data.goals.push({ id: Date.now(), name, habitId, period, target });
-            saveData();
-            closeModal('addGoalModal');
-            updateAll();
-        }
-
-        function requestDeleteHabit(habitId) { pendingDelete = { type: 'habit', id: habitId }; openModal('deleteConfirmModal'); }
-        function requestDeleteGoal(goalId) { pendingDelete = { type: 'goal', id: goalId }; openModal('deleteConfirmModal'); }
-
-        function confirmDelete() {
-            if (!pendingDelete) return;
-            if (pendingDelete.type === 'habit') {
-                data.habits = data.habits.filter(h => h.id !== pendingDelete.id);
-                data.goals = data.goals.filter(g => g.habitId !== pendingDelete.id);
-            } else if (pendingDelete.type === 'goal') {
-                data.goals = data.goals.filter(g => g.id !== pendingDelete.id);
-            }
-            pendingDelete = null;
-            saveData();
-            closeModal('deleteConfirmModal');
-            updateAll();
-        }
-
-        function renderHabitsLabels() {
+        // === Рендер списка целей и "Сегодня" ===
+        function renderGoalsList() {
             let html = '';
-            data.habits.forEach(h => {
-                html += `<div class="habit-row-label"><span class="icon">${h.icon}</span><span class="name">${h.name}</span><button class="delete-habit-btn" onclick="requestDeleteHabit(${h.id})">🗑</button></div>`;
-            });
-            document.getElementById('habitsLabels').innerHTML = html;
-        }
-
-        function renderGoals() {
-            let html = '';
-            const periodLabels = { day: 'день', week: 'неделя', month: 'месяц', year: 'год' };
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
             data.goals.forEach(goal => {
-                const habit = data.habits.find(h => h.id === goal.habitId);
-                if (!habit) return;
-
-                const current = getCurrentForGoal(goal);
-                const percent = Math.min(100, Math.round((current / goal.target) * 100));
-                const isDone = percent >= 100;
-
+                const isTodayDone = data.goalLogs[`${goal.id}-${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`];
+                
                 html += `
-            <div class="goal-row">
-                <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="goal-row-name">${habit.icon} ${goal.name}</span>
-                        <span class="goal-row-percent" style="color: ${isDone ? '#4ade80' : '#fff'}">${percent}%</span>
+                <div class="goal-row-item">
+                    <div class="goal-name" title="${goal.name}">${goal.name}</div>
+                    <div class="goal-actions">
+                        <button class="action-btn" title="Изменить" onclick="openEditGoalModal(${goal.id})">✏️</button>
+                        <button class="action-btn" title="Период" onclick="openEditGoalModal(${goal.id})">📅</button>
+                        <button class="action-btn" title="Добавить время" onclick="openAddTimeModal(${goal.id})">⏱️</button>
+                        <button class="action-btn complete" title="Завершить" onclick="requestCompleteGoal(${goal.id})">✅</button>
+                        <button class="action-btn delete" title="Удалить" onclick="requestDeleteGoal(${goal.id})">🗑️</button>
                     </div>
-                    <div class="goal-row-bar">
-                        <div class="goal-row-bar-fill" style="width: ${percent}%; background: ${isDone ? '#4ade80' : '#2a5aaa'}"></div>
+                    <div class="today-check ${isTodayDone ? 'done' : ''}" onclick="toggleToday(${goal.id})" title="Отметить сегодня">
+                        ${isTodayDone ? '✓' : ''}
                     </div>
-                    <div class="goal-row-details">
-                        ${habit.name} • ${periodLabels[goal.period]} • ${current}/${goal.target}
-                    </div>
-                    <button class="goal-row-delete" onclick="requestDeleteGoal(${goal.id})">🗑 Удалить</button>
-                </div>
-            </div>
-        `;
+                </div>`;
             });
 
             if (data.goals.length === 0) {
                 html = '<div style="color: #666; font-size: 12px; text-align: center; padding: 15px;">Нет целей. Добавьте первую!</div>';
             }
-
-            document.getElementById('goalsList').innerHTML = html;
+            document.getElementById('goalsListPanel').innerHTML = html;
         }
 
-        function getCurrentForGoal(goal) { return getHabitCount(goal.habitId, goal.period); }
-        function getGoalProgress(goal) { const c = getCurrentForGoal(goal); return Math.min(100, Math.round((c / goal.target) * 100)); }
-
-        function getHabitCount(habitId, period) {
-            let count = 0;
+        function toggleToday(goalId) {
             const today = new Date();
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            if (period === 'month') {
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const monthKey = getMonthKey();
-                for (let d = 1; d <= daysInMonth; d++) { if (data.habitLogs[`${habitId}-${monthKey}-${d}`]) count++; }
-            } else if (period === 'week') {
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
-                for (let i = 0; i < 7; i++) {
-                    const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
-                    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                    if (data.habitLogs[`${habitId}-${key}`]) count++;
-                }
-            } else if (period === 'day') {
-                const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-                if (data.habitLogs[`${habitId}-${key}`]) count = 1;
-            } else if (period === 'year') {
-                for (let m = 0; m < 12; m++) {
-                    const daysInM = new Date(year, m + 1, 0).getDate();
-                    for (let d = 1; d <= daysInM; d++) { if (data.habitLogs[`${habitId}-${year}-${m}-${d}`]) count++; }
-                }
-            }
-            return count;
+            const key = `${goalId}-${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+            data.goalLogs[key] = !data.goalLogs[key];
+            saveData();
+            updateAll();
         }
 
-        function renderCircle() {
-            let totalTarget = 0;
-            let totalCurrent = 0;
-
-            // Считаем общую сумму по всем целям
-            data.goals.forEach(goal => {
-                const habit = data.habits.find(h => h.id === goal.habitId);
-                if (!habit) return;
-                const current = getCurrentForGoal(goal);
-                totalTarget += goal.target;
-                totalCurrent += current;
-            });
-
-            const totalRemaining = totalTarget - totalCurrent;
-            const totalPercent = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
-
-            if (mainCircleChart) mainCircleChart.destroy();
-
-            // Если целей нет
-            if (totalTarget === 0) {
-                mainCircleChart = new Chart(document.getElementById('mainCircle'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Нет данных'],
-                        datasets: [{
-                            data: [100],
-                            backgroundColor: ['#1e1e1e'],
-                            borderWidth: 0,
-                            cutout: '70%'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                    }
-                });
-                document.getElementById('circlePercent').textContent = '0%';
-                document.getElementById('circleLabel').textContent = 'Нет целей';
-                return;
-            }
-
-            // Рисуем круг: [выполнено, осталось]
-            mainCircleChart = new Chart(document.getElementById('mainCircle'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Выполнено', 'Осталось'],
-                    datasets: [{
-                        data: [totalCurrent, totalRemaining],
-                        backgroundColor: ['#2a5aaa', '#2a2a2a'],
-                        borderWidth: 0,
-                        cutout: '70%'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    rotation: -90,
-                    circumference: 360,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1a1a1a',
-                            titleColor: '#fff',
-                            bodyColor: '#ddd',
-                            callbacks: {
-                                label: function (context) {
-                                    const percent = Math.round((context.parsed / totalTarget) * 100);
-                                    return `${context.label}: ${context.parsed} из ${totalTarget} (${percent}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Текст в центре круга
-            document.getElementById('circlePercent').textContent = totalPercent + '%';
-            document.getElementById('circleLabel').textContent = `${totalCurrent}/${totalTarget}`;
-
-            // Легенда с разбивкой по целям
-            let legendHtml = '';
-            data.goals.forEach((goal, index) => {
-                const habit = data.habits.find(h => h.id === goal.habitId);
-                if (!habit) return;
-                const current = getCurrentForGoal(goal);
-                const percent = Math.round((current / goal.target) * 100);
-                const status = percent >= 100 ? '✓' : '→';
-                legendHtml += `<div class="legend-item"><div class="legend-color" style="background: ${COLORS[index % COLORS.length]}"></div><span>${status} ${habit.icon} ${goal.name}: ${current}/${goal.target} (${percent}%)</span></div>`;
-            });
-            document.getElementById('circleLegend').innerHTML = legendHtml;
+        // === Модальные окна целей ===
+        function openAddGoalModal() {
+            document.getElementById('goalModalTitle').textContent = 'Новая цель';
+            document.getElementById('editGoalId').value = '';
+            document.getElementById('goalName').value = '';
+            document.getElementById('goalStartDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('goalEndDate').value = '';
+            document.getElementById('goalTarget').value = '30';
+            openModal('goalModal');
         }
 
+        function openEditGoalModal(goalId) {
+            const goal = data.goals.find(g => g.id === goalId);
+            if (!goal) return;
+            document.getElementById('goalModalTitle').textContent = 'Редактировать цель';
+            document.getElementById('editGoalId').value = goal.id;
+            document.getElementById('goalName').value = goal.name;
+            document.getElementById('goalStartDate').value = goal.startDate;
+            document.getElementById('goalEndDate').value = goal.endDate || '';
+            document.getElementById('goalTarget').value = goal.target;
+            openModal('goalModal');
+        }
+
+        function saveGoal() {
+            const id = document.getElementById('editGoalId').value;
+            const name = cleanName(document.getElementById('goalName').value);
+            const startDate = document.getElementById('goalStartDate').value;
+            const endDate = document.getElementById('goalEndDate').value || null;
+            const target = parseInt(document.getElementById('goalTarget').value) || 30;
+
+            if (!name || !startDate) { alert('Заполните название и дату начала!'); return; }
+
+            if (id) {
+                const goal = data.goals.find(g => g.id == id);
+                goal.name = name; goal.startDate = startDate; goal.endDate = endDate; goal.target = target;
+            } else {
+                data.goals.push({ id: Date.now(), name, startDate, endDate, status: 'active', target });
+            }
+            saveData(); closeModal('goalModal'); updateAll();
+        }
+
+        // === Время ===
+        function openAddTimeModal(goalId = null) {
+            const select = document.getElementById('timeGoalSelect');
+            select.innerHTML = data.goals.filter(g => g.status === 'active').map(g => 
+                `<option value="${g.id}" ${g.id === goalId ? 'selected' : ''}>${g.name}</option>`
+            ).join('');
+            document.getElementById('timeHours').value = '0';
+            document.getElementById('timeMinutes').value = '0';
+            document.getElementById('timeDate').value = new Date().toISOString().split('T')[0];
+            openModal('addTimeModal');
+        }
+
+        function saveTime() {
+            const goalId = parseInt(document.getElementById('timeGoalSelect').value);
+            const h = parseInt(document.getElementById('timeHours').value) || 0;
+            const m = parseInt(document.getElementById('timeMinutes').value) || 0;
+            const dateStr = document.getElementById('timeDate').value;
+            
+            if (!goalId || !dateStr || (h === 0 && m === 0)) return;
+
+            const totalMinutes = h * 60 + m;
+            const key = `${goalId}-${dateStr}`;
+            data.timeLogs[key] = (data.timeLogs[key] || 0) + totalMinutes;
+            
+            saveData(); closeModal('addTimeModal'); updateAll();
+        }
+
+        // === Завершение и удаление ===
+        function requestCompleteGoal(goalId) {
+            document.getElementById('completeGoalId').value = goalId;
+            openModal('completeConfirmModal');
+        }
+
+        function confirmComplete() {
+            const goalId = parseInt(document.getElementById('completeGoalId').value);
+            const goal = data.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.status = 'completed';
+                if (!goal.endDate) goal.endDate = new Date().toISOString().split('T')[0];
+                saveData();
+            }
+            closeModal('completeConfirmModal'); updateAll();
+        }
+
+        function requestDeleteGoal(goalId) {
+            document.getElementById('deleteGoalId').value = goalId;
+            openModal('deleteConfirmModal');
+        }
+
+        function confirmDelete() {
+            const goalId = parseInt(document.getElementById('deleteGoalId').value);
+            data.goals = data.goals.filter(g => g.id !== goalId);
+            for (const key in data.goalLogs) { if (key.startsWith(`${goalId}-`)) delete data.goalLogs[key]; }
+            for (const key in data.timeLogs) { if (key.startsWith(`${goalId}-`)) delete data.timeLogs[key]; }
+            saveData(); closeModal('deleteConfirmModal'); updateAll();
+        }
+
+        // === Трекер (Таблица) ===
         function renderTable() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const monthKey = getMonthKey();
-
+            
             document.getElementById('monthTitle').textContent = `${MONTHS[month]} ${year}`;
-
             const thead = document.getElementById('habitsHead');
             const tbody = document.getElementById('habitsBody');
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
+            thead.innerHTML = ''; tbody.innerHTML = '';
 
             const row1 = document.createElement('tr');
             const emptyTh1 = document.createElement('th');
-            emptyTh1.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:120px;';
+            emptyTh1.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:100px;';
             row1.appendChild(emptyTh1);
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(year, month, d);
-                const dayName = DAY_NAMES[date.getDay()];
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const th = document.createElement('th');
-                th.textContent = dayName;
-                th.className = isWeekend ? 'weekend' : 'day-name';
-                row1.appendChild(th);
-            }
-            thead.appendChild(row1);
-
+            
             const row2 = document.createElement('tr');
             const emptyTh2 = document.createElement('th');
-            emptyTh2.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:120px;';
+            emptyTh2.style.cssText = 'background:#141414; position:sticky; left:0; z-index:2; min-width:100px;';
             row2.appendChild(emptyTh2);
-            for (let d = 1; d <= daysInMonth; d++) {
-                const th = document.createElement('th');
-                th.innerHTML = `<span class="date-num">${d}</span>`;
-                row2.appendChild(th);
-            }
-            thead.appendChild(row2);
 
-            data.habits.forEach(habit => {
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                
+                const th1 = document.createElement('th');
+                th1.textContent = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'][date.getDay()];
+                th1.className = isWeekend ? 'weekend' : 'day-name';
+                row1.appendChild(th1);
+
+                const th2 = document.createElement('th');
+                th2.innerHTML = `<span class="date-num">${d}</span>`;
+                row2.appendChild(th2);
+            }
+            thead.appendChild(row1); thead.appendChild(row2);
+
+            data.goals.forEach(goal => {
                 const tr = document.createElement('tr');
                 const nameTd = document.createElement('td');
                 nameTd.className = 'habit-name';
-                nameTd.textContent = `${habit.icon} ${habit.name}`;
+                nameTd.textContent = goal.status === 'completed' ? `✅ ${goal.name}` : goal.name;
                 tr.appendChild(nameTd);
+
                 for (let d = 1; d <= daysInMonth; d++) {
                     const td = document.createElement('td');
                     td.className = 'check-cell';
-                    const done = data.habitLogs[`${habit.id}-${monthKey}-${d}`] || false;
-                    if (done) td.classList.add('done');
-                    td.textContent = done ? '●' : '○';
-                    td.onclick = function () {
-                        const key = `${habit.id}-${monthKey}-${d}`;
-                        data.habitLogs[key] = !data.habitLogs[key];
-                        saveData();
-                        updateAll();
-                    };
+                    
+                    const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isActiveDay = currentDateStr >= goal.startDate && (!goal.endDate || currentDateStr <= goal.endDate);
+                    
+                    if (isActiveDay) {
+                        if (goal.status === 'completed') {
+                            td.innerHTML = '<div style="width:12px; height:12px; background:#4ade80; border-radius:2px; margin:0 auto;"></div>';
+                            td.style.cursor = 'default';
+                        } else {
+                            const key = `${goal.id}-${year}-${month}-${d}`;
+                            const isDone = data.goalLogs[key];
+                            td.textContent = isDone ? '●' : '○';
+                            if (isDone) td.classList.add('done');
+                            td.onclick = function() {
+                                data.goalLogs[key] = !data.goalLogs[key];
+                                saveData(); updateAll();
+                            };
+                        }
+                    } else {
+                        td.classList.add('inactive');
+                        td.textContent = '';
+                    }
                     tr.appendChild(td);
                 }
                 tbody.appendChild(tr);
             });
         }
 
+        // === Диаграммы ===
         function renderWave() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const dailyActivity = [], labels = [];
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                let count = 0;
+                data.goals.forEach(g => { if (data.goalLogs[`${g.id}-${year}-${month}-${d}`]) count++; });
+                dailyActivity.push(count);
+                labels.push(d);
+            }
 
-            if (wavePeriod === 'month') {
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const monthKey = getMonthKey();
-                const dailyActivity = [], labels = [];
+            if (waveChartInstance) waveChartInstance.destroy();
+            waveChartInstance = new Chart(document.getElementById('waveChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Активность', data: dailyActivity, borderColor: '#2a5aaa',
+                        backgroundColor: 'rgba(42, 90, 170, 0.2)', borderWidth: 2, fill: true,
+                        tension: 0.4, pointRadius: 2, pointBackgroundColor: '#2a5aaa'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { bottom: 30, left: 10, right: 10, top: 10 } },
+                    scales: {
+                        y: { beginAtZero: true, min: 0, ticks: { color: '#666', stepSize: 1, font: { size: 10 } }, grid: { color: '#1e1e1e' } },
+                        x: { ticks: { color: '#666', maxTicksLimit: 15, font: { size: 10 } }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderCircle() {
+            let totalTarget = 0, totalCurrent = 0;
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            data.goals.forEach(goal => {
+                if (goal.status !== 'active') return;
+                let current = 0;
                 for (let d = 1; d <= daysInMonth; d++) {
-                    let count = 0;
-                    data.habits.forEach(h => { if (data.habitLogs[`${h.id}-${monthKey}-${d}`]) count++; });
-                    dailyActivity.push(count);
-                    labels.push(d);
+                    if (data.goalLogs[`${goal.id}-${year}-${month}-${d}`]) current++;
                 }
-                if (waveChartInstance) waveChartInstance.destroy();
-                waveChartInstance = new Chart(document.getElementById('waveChart'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{ label: 'Активность', data: dailyActivity, borderColor: '#2a5aaa', backgroundColor: 'rgba(42, 90, 170, 0.2)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#2a5aaa', pointHoverRadius: 6 }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
-                        scales: {
-                            y: { beginAtZero: true, min: 0, max: Math.max(data.habits.length, 1), ticks: { color: '#666', stepSize: 1, font: { size: 12 }, callback: function (value) { return value; } }, grid: { color: '#1e1e1e' } },
-                            x: { ticks: { color: '#666', maxTicksLimit: 15, font: { size: 12 }, padding: 15 }, grid: { display: false } }
-                        },
-                        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 } } }
-                    }
+                totalTarget += goal.target;
+                totalCurrent += current;
+            });
+
+            const totalRemaining = Math.max(0, totalTarget - totalCurrent);
+            const totalPercent = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
+
+            if (mainCircleChart) mainCircleChart.destroy();
+
+            if (totalTarget === 0) {
+                mainCircleChart = new Chart(document.getElementById('mainCircle'), {
+                    type: 'doughnut',
+                    data: { labels: ['Нет данных'], datasets: [{ data: [100], backgroundColor: ['#1e1e1e'], borderWidth: 0, cutout: '70%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
                 });
-            } else if (wavePeriod === 'year') {
-                const monthlyActivity = [], labels = [], bgColors = [];
-                const shortMonths = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-                const currentMonth = currentDate.getMonth();
-                for (let m = 0; m < 12; m++) {
-                    let count = 0;
-                    const daysInM = new Date(year, m + 1, 0).getDate();
-                    for (let d = 1; d <= daysInM; d++) { data.habits.forEach(h => { if (data.habitLogs[`${h.id}-${year}-${m}-${d}`]) count++; }); }
-                    monthlyActivity.push(count);
-                    labels.push(shortMonths[m]);
-                    if (m === currentMonth) bgColors.push('#2a5aaa');
-                    else if (m < currentMonth) bgColors.push('#1a3a6e');
-                    else bgColors.push('#1e1e1e');
+                document.getElementById('circlePercent').textContent = '0%';
+                document.getElementById('circleLabel').textContent = 'Нет целей';
+                return;
+            }
+
+            mainCircleChart = new Chart(document.getElementById('mainCircle'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Выполнено', 'Осталось'],
+                    datasets: [{ data: [totalCurrent, totalRemaining], backgroundColor: ['#2a5aaa', '#2a2a2a'], borderWidth: 0, cutout: '70%' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, rotation: -90, circumference: 360,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } }
                 }
-                if (waveChartInstance) waveChartInstance.destroy();
-                waveChartInstance = new Chart(document.getElementById('waveChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{ label: 'Отметок за месяц', data: monthlyActivity, backgroundColor: bgColors, borderColor: '#2a5aaa', borderWidth: 1, borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.8 }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        layout: { padding: { bottom: 50, left: 10, right: 10, top: 10 } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: '#666', stepSize: 1, font: { size: 12 } }, grid: { color: '#1e1e1e' } },
-                            x: { ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: false, padding: 15 }, grid: { display: false } }
-                        },
-                        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#2a5aaa', borderColor: '#2a2a2a', borderWidth: 1, titleFont: { size: 13 }, bodyFont: { size: 13 }, callbacks: { label: function (context) { return `${context.parsed.y} отметок`; } } } }
-                    }
+            });
+
+            document.getElementById('circlePercent').textContent = totalPercent + '%';
+            document.getElementById('circleLabel').textContent = `${totalCurrent}/${totalTarget}`;
+        }
+
+        function renderTimeChart() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            startOfWeek.setHours(0,0,0,0);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23,59,59,999);
+
+            const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth()+1).padStart(2,'0')}-${String(startOfWeek.getDate()).padStart(2,'0')}`;
+            const endStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth()+1).padStart(2,'0')}-${String(endOfWeek.getDate()).padStart(2,'0')}`;
+
+            const goalTimes = {};
+            let totalMinutes = 0;
+
+            for (const [key, minutes] of Object.entries(data.timeLogs)) {
+                const parts = key.split('-');
+                if (parts.length < 4) continue;
+                const dateStr = `${parts[1]}-${parts[2]}-${parts[3]}`;
+                if (dateStr >= startStr && dateStr <= endStr) {
+                    const gId = parts[0];
+                    goalTimes[gId] = (goalTimes[gId] || 0) + minutes;
+                    totalMinutes += minutes;
+                }
+            }
+
+            const labels = [], chartData = [];
+            for (const [gId, mins] of Object.entries(goalTimes)) {
+                const goal = data.goals.find(g => g.id == gId);
+                if (goal) { labels.push(goal.name); chartData.push(mins); }
+            }
+
+            if (totalMinutes === 0) { labels.push('Нет данных'); chartData.push(100); }
+
+            if (timeChartInstance) timeChartInstance.destroy();
+            timeChartInstance = new Chart(document.getElementById('timeCircle'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: totalMinutes === 0 ? ['#1e1e1e'] : COLORS.slice(0, labels.length),
+                        borderWidth: 0, cutout: '65%'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            document.getElementById('timeTotal').textContent = `${h}ч ${m}м`;
+
+            let legendHtml = '';
+            if (totalMinutes > 0) {
+                labels.forEach((label, i) => {
+                    const mins = chartData[i];
+                    const th = Math.floor(mins / 60);
+                    const tm = mins % 60;
+                    legendHtml += `<div class="legend-item"><div class="legend-color" style="background: ${COLORS[i % COLORS.length]}"></div><span>${label}: ${th}ч ${tm}м</span></div>`;
                 });
+            } else {
+                legendHtml = '<div style="color:#666; font-size:12px; text-align:center;">Нет данных за эту неделю</div>';
+            }
+            document.getElementById('timeLegend').innerHTML = legendHtml;
+
+            renderBestDay();
+        }
+
+        function renderBestDay() {
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const prefix = `-${year}-${month}-`;
+            
+            let maxMinutes = 0, bestDay = null;
+            const dayMinutes = {};
+
+            for (const [key, mins] of Object.entries(data.timeLogs)) {
+                if (key.includes(prefix)) {
+                    const day = key.split(prefix)[1];
+                    dayMinutes[day] = (dayMinutes[day] || 0) + mins;
+                }
+            }
+
+            for (const [day, mins] of Object.entries(dayMinutes)) {
+                if (mins > maxMinutes) { maxMinutes = mins; bestDay = day; }
+            }
+
+            if (bestDay && maxMinutes > 0) {
+                const h = Math.floor(maxMinutes / 60);
+                const m = maxMinutes % 60;
+                document.getElementById('bestDayText').textContent = `${parseInt(bestDay)} ${MONTHS[currentDate.getMonth()]} — ${h}ч ${m}м`;
+            } else {
+                document.getElementById('bestDayText').textContent = 'Нет данных';
             }
         }
 
-        function updateAll() { renderHabitsLabels(); renderGoals(); renderTable(); renderWave(); renderCircle(); }
+        function updateAll() {
+            renderGoalsList();
+            renderTable();
+            renderWave();
+            renderCircle();
+            renderTimeChart();
+        }
+
         updateAll();
     </script>
 </body>
-
 </html>
