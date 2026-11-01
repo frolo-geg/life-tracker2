@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Восстановление данных</title>
+<style>
+body { background:#0a0a0a; color:#e0e0e0; font-family:sans-serif; padding:20px; max-width:500px; margin:0 auto; }
+h1 { color:#fff; font-size:20px; }
+.box { background:#141414; border:1px solid #2a2a2a; border-radius:10px; padding:15px; margin:15px 0; }
+pre { background:#1e1e1e; padding:10px; border-radius:5px; overflow-x:auto; font-size:11px; color:#4ade80; }
+button { background:#2a5aaa; color:#fff; border:none; padding:12px 20px; border-radius:8px; font-size:14px; cursor:pointer; width:100%; margin:5px 0; }
+button.danger { background:#e94560; }
+.status { padding:10px; border-radius:5px; margin:10px 0; }
+.ok { background:#1a2a1a; color:#4ade80; }
+.err { background:#2a1a1a; color:#e94560; }
+</style>
+</head>
+<body>
+<h1>🔧 Восстановление данных</h1>
+
+<div class="box">
+<h3>Шаг 1: Найти старые данные</h3>
+<button onclick="findData()">🔍 Найти данные в браузере</button>
+<div id="findResult"></div>
+</div>
+
+<div class="box">
+<h3>Шаг 2: Посмотреть что нашли</h3>
+<button onclick="showData()">👁️ Показать данные</button>
+<div id="showResult"></div>
+</div>
+
+<div class="box">
+<h3>Шаг 3: Восстановить</h3>
+<button onclick="restoreData()">✅ Восстановить данные</button>
+<div id="restoreResult"></div>
+</div>
+
+<div class="box">
+<h3>Шаг 4: Вернуться</h3>
+<button onclick="window.location.href='index.html'">🏠 Открыть главный сайт</button>
+</div>
+
+<script>
+const EMOJI = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+
+function findData() {
+    const keys = ['lifeTrackerV9', 'lifeTracker', 'trackerData', 'habitTracker', 'habits', 'data'];
+    let found = [];
+    
+    for (let key of keys) {
+        const val = localStorage.getItem(key);
+        if (val) {
+            try {
+                const parsed = JSON.parse(val);
+                found.push({key, size: val.length, preview: JSON.stringify(parsed).substring(0, 100)});
+            } catch(e) {
+                found.push({key, size: val.length, preview: val.substring(0, 100)});
+            }
+        }
+    }
+    
+    // Также покажем все ключи
+    let allKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        allKeys.push(k);
+    }
+    
+    let html = '<div class="status ok">';
+    if (found.length > 0) {
+        html += `<b>Найдено ${found.length} записей:</b><br>`;
+        found.forEach(f => {
+            html += `📦 <b>${f.key}</b> (${f.size} байт)<br><pre>${f.preview}</pre>`;
+        });
+    } else {
+        html += '❌ Данные не найдены по стандартным ключам<br>';
+    }
+    html += `<br><b>Все ключи в localStorage:</b><br>${allKeys.join(', ') || 'пусто'}`;
+    html += '</div>';
+    
+    document.getElementById('findResult').innerHTML = html;
+}
+
+function showData() {
+    const keys = ['lifeTrackerV9', 'lifeTracker', 'trackerData', 'habitTracker'];
+    let data = null;
+    
+    for (let key of keys) {
+        const val = localStorage.getItem(key);
+        if (val) {
+            try { data = JSON.parse(val); break; } catch(e) {}
+        }
+    }
+    
+    if (!data) {
+        document.getElementById('showResult').innerHTML = '<div class="status err">Данные не найдены</div>';
+        return;
+    }
+    
+    let html = '<div class="status ok"><pre>';
+    html += 'Ключи: ' + Object.keys(data).join(', ') + '\n\n';
+    
+    if (data.habits) {
+        html += 'Привычки (' + data.habits.length + '):\n';
+        data.habits.forEach(h => { html += '  - ' + h.name + ' (id:' + h.id + ')\n'; });
+        html += '\n';
+    }
+    
+    if (data.habitLogs) {
+        const keys = Object.keys(data.habitLogs);
+        html += 'Отметок habitLogs: ' + keys.length + '\n';
+        html += 'Примеры:\n';
+        keys.slice(0, 10).forEach(k => { html += '  ' + k + ' = ' + data.habitLogs[k] + '\n'; });
+        html += '\n';
+    }
+    
+    if (data.goalLogs) {
+        html += 'Отметок goalLogs: ' + Object.keys(data.goalLogs).length + '\n\n';
+    }
+    
+    if (data.goals) {
+        html += 'Цели (' + data.goals.length + '):\n';
+        data.goals.forEach(g => { html += '  - ' + g.name + '\n'; });
+        html += '\n';
+    }
+    
+    if (data.timeLogs) {
+        html += 'Время timeLogs: ' + Object.keys(data.timeLogs).length + ' записей\n';
+    }
+    
+    html += '</pre></div>';
+    document.getElementById('showResult').innerHTML = html;
+}
+
+function restoreData() {
+    const keys = ['lifeTrackerV9', 'lifeTracker', 'trackerData', 'habitTracker'];
+    let data = null;
+    let sourceKey = '';
+    
+    for (let key of keys) {
+        const val = localStorage.getItem(key);
+        if (val) {
+            try { data = JSON.parse(val); sourceKey = key; break; } catch(e) {}
+        }
+    }
+    
+    if (!data) {
+        document.getElementById('restoreResult').innerHTML = '<div class="status err">❌ Данные не найдены</div>';
+        return;
+    }
+    
+    let log = [];
+    log.push('📥 Источник: ' + sourceKey);
+    
+    // Миграция привычек в цели
+    if (data.habits && data.habits.length > 0) {
+        if (!data.goals || data.goals.length === 0) {
+            data.goals = data.habits.map(h => ({
+                id: h.id,
+                name: (h.name || '').replace(EMOJI, '').trim(),
+                startDate: '2026-10-01',
+                endDate: null,
+                status: 'active',
+                target: 30
+            }));
+            log.push('✅ Создано целей из привычек: ' + data.goals.length);
+        } else {
+            log.push('ℹ️ Цели уже есть, привычки не трогаем');
+        }
+    }
+    
+    // Миграция логов
+    if (data.habitLogs && !data.goalLogs) {
+        data.goalLogs = {...data.habitLogs};
+        log.push('✅ Перенесено отметок: ' + Object.keys(data.goalLogs).length);
+    } else if (data.goalLogs) {
+        log.push('ℹ️ goalLogs уже есть: ' + Object.keys(data.goalLogs).length + ' отметок');
+    } else if (data.habitLogs) {
+        data.goalLogs = {...data.habitLogs};
+        log.push('✅ Перенесено из habitLogs: ' + Object.keys(data.goalLogs).length);
+    }
+    
+    if (!data.timeLogs) {
+        data.timeLogs = {};
+        log.push('✅ Создан пустой timeLogs');
+    }
+    
+    // Чистим эмодзи в названиях целей
+    if (data.goals) {
+        data.goals = data.goals.map(g => ({
+            ...g,
+            name: (g.name || '').replace(EMOJI, '').trim(),
+            startDate: g.startDate || '2026-10-01',
+            status: g.status || 'active'
+        }));
+    }
+    
+    // Сохраняем
+    localStorage.setItem('lifeTrackerV9', JSON.stringify(data));
+    log.push('💾 Сохранено в lifeTrackerV9');
+    
+    // Итог
+    let html = '<div class="status ok"><b>✅ Восстановление завершено!</b><br><br>';
+    log.forEach(l => { html += l + '<br>'; });
+    html += '<br><b>Итого:</b><br>';
+    html += 'Целей: ' + (data.goals ? data.goals.length : 0) + '<br>';
+    html += 'Отметок: ' + (data.goalLogs ? Object.keys(data.goalLogs).length : 0) + '<br>';
+    html += 'Записей времени: ' + (data.timeLogs ? Object.keys(data.timeLogs).length : 0) + '<br>';
+    html += '</div>';
+    
+    document.getElementById('restoreResult').innerHTML = html;
+}
+</script>
+</body>
+</html>
