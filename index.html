@@ -277,7 +277,7 @@ saveData();closeModal('goalModal');updateAll();
 function openTimeModal(goalId){
 const sel=document.getElementById('timeGoal');
 sel.innerHTML=data.goals.filter(g=>g.status==='active').map(g=>'<option value="'+g.id+'" '+(g.id===goalId?'selected':'')+'>'+g.name+'</option>').join('');
-document.getElementById('timeH').value='0';document.getElementById('timeM').value='0';document.getElementById('timeDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('timeH').value='';document.getElementById('timeM').value='';document.getElementById('timeDate').value=new Date().toISOString().split('T')[0];
 openModal('timeModal');
 }
 
